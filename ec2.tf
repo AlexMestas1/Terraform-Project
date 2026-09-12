@@ -1,21 +1,3 @@
-# configured aws provider with proper credentials
-provider "aws" {
-  region  = "us-east-1"
-  profile = "terraform-user"
-}
-
-
-# store the terraform state file in s3
-terraform {
-  backend "s3" {
-    bucket  = "alexmestas-terraform-state"
-    key     = "build/terraform.tfstate"
-    region  = "us-east-1"
-    profile = "terraform-user"
-  }
-}
-
-
 # create default vpc if one does not exist
 resource "aws_default_vpc" "default_vpc" {
 
@@ -36,12 +18,6 @@ resource "aws_default_subnet" "default_az1" {
   tags = {
     Name = "default subnet"
   }
-}
-
-
-variable "my_ip" {
-  description = "my public ip address, for ssh access"
-  type        = string
 }
 
 
@@ -100,7 +76,7 @@ data "aws_ami" "amazon_linux_2" {
 # launch the ec2 instance and install website
 resource "aws_instance" "ec2_instance" {
   ami                    = data.aws_ami.amazon_linux_2.id
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   subnet_id              = aws_default_subnet.default_az1.id
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
   key_name               = "myec2key"
@@ -109,10 +85,4 @@ resource "aws_instance" "ec2_instance" {
   tags = {
     Name = "techmax server"
   }
-}
-
-
-# print the url of the server
-output "ec2_public_ipv4_url" {
-  value = join("", ["http://", aws_instance.ec2_instance.public_ip])
 }
