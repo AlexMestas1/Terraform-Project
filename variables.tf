@@ -19,4 +19,9 @@ variable "instance_type" {
 variable "my_ip" {
   description = "my public ip address, for ssh access"
   type        = string
+
+  validation {
+    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$", var.my_ip))
+    error_message = "my_ip must be a CIDR block, e.g. 203.0.113.5/32."
+  }
 }
