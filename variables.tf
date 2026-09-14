@@ -21,7 +21,7 @@ variable "my_ip" {
   type        = string
 
   validation {
-    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$", var.my_ip))
-    error_message = "my_ip must be a CIDR block, e.g. 203.0.113.5/32."
+    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", var.my_ip))
+    error_message = "my_ip must be a plain IPv4 address, e.g. 203.0.113.5 (no /32, ec2.tf already appends that part)."
   }
 }
