@@ -27,6 +27,9 @@ terraform plan -var="my_ip=YOUR_IP_HERE"
 terraform apply -var="my_ip=YOUR_IP_HERE"
 ```
 
+`my_ip` should just be the bare address, e.g. `203.0.113.5`, not a CIDR
+block. The security group rule appends `/32` itself.
+
 Terraform prints the site's URL when it's done.
 
 To tear everything down:
