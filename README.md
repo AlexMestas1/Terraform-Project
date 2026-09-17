@@ -1,5 +1,7 @@
 # Terraform-Project
 
+[![Terraform](https://github.com/AlexMestas1/Terraform-Project/actions/workflows/terraform.yml/badge.svg)](https://github.com/AlexMestas1/Terraform-Project/actions/workflows/terraform.yml)
+
 Basic Terraform setup that spins up a single EC2 instance on AWS and
 installs a demo website on it.
 
