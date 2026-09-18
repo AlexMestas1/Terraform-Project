@@ -11,8 +11,8 @@ installs a demo website on it.
 - Creates a security group allowing HTTP (80) from anywhere and SSH (22)
   from my own IP only
 - Looks up the latest Amazon Linux 2 AMI
-- Launches an EC2 instance and runs `install_techmax.sh` on boot, which
-  installs Apache and pulls down a demo site template
+- Launches an EC2 instance and runs `install_website.sh` on boot, which
+  installs Apache and drops in a small static demo page
 
 ## Requirements
 
