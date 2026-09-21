@@ -89,6 +89,18 @@ resource "aws_instance" "ec2_instance" {
   key_name               = var.key_name
   user_data              = file("install_website.sh")
 
+  # require IMDSv2 so the metadata service can't be reached with a plain GET
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 8
+    encrypted   = true
+  }
+
   tags = {
     Name = "demo web server"
   }
