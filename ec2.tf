@@ -66,9 +66,16 @@ data "aws_ami" "amazon_linux_2" {
     values = ["amazon"]
   }
 
+  # the old amzn2-ami-hvm* pattern also matches arm64 images, which
+  # a t2.micro can't run
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm*"]
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
 }
 
@@ -79,7 +86,7 @@ resource "aws_instance" "ec2_instance" {
   instance_type          = var.instance_type
   subnet_id              = aws_default_subnet.default_az1.id
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
-  key_name               = "myec2key"
+  key_name               = var.key_name
   user_data              = file("install_website.sh")
 
   tags = {
