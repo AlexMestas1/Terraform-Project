@@ -10,15 +10,17 @@ installs a demo website on it.
 - Uses the account's default VPC and subnet for the region
 - Creates a security group allowing HTTP (80) from anywhere and SSH (22)
   from my own IP only
-- Looks up the latest Amazon Linux 2 AMI
-- Launches an EC2 instance and runs `install_website.sh` on boot, which
-  installs Apache and drops in a small static demo page
+- Looks up the latest x86_64 Amazon Linux 2 AMI
+- Launches an EC2 instance with an encrypted root volume and IMDSv2
+  required, and runs `install_website.sh` on boot, which installs Apache
+  and drops in a small static demo page
 
 ## Requirements
 
-- Terraform
+- Terraform 1.5 or newer (CI runs 1.8.5)
 - An AWS account with an AWS CLI profile set up
-- An existing EC2 key pair
+- An existing EC2 key pair, name set with the `key_name` variable
+  (defaults to `myec2key`)
 - An S3 bucket for the Terraform state file
 
 ## Usage
@@ -32,7 +34,13 @@ terraform apply -var="my_ip=YOUR_IP_HERE"
 `my_ip` should just be the bare address, e.g. `203.0.113.5`, not a CIDR
 block. The security group rule appends `/32` itself.
 
-Terraform prints the site's URL when it's done.
+Terraform prints the site's URL and an ssh command when it's done.
+
+To avoid typing the variables every time, copy `terraform.tfvars.example`
+to `terraform.tfvars` and fill it in. That file is gitignored.
+
+CI runs `terraform fmt`, `validate` and `tflint` on every push. It doesn't
+run a plan, since that needs AWS credentials.
 
 To tear everything down:
 

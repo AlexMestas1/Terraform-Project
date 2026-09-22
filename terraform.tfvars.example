@@ -1,0 +1,4 @@
+# copy to terraform.tfvars (gitignored) and fill in
+my_ip         = "203.0.113.5"
+key_name      = "myec2key"
+instance_type = "t2.micro"
