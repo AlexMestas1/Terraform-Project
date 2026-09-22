@@ -24,3 +24,10 @@ jobs:
 
       - name: Terraform validate
         run: terraform validate
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.64.0
+
+      - name: TFLint
+        run: tflint
