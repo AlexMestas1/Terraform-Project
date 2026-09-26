@@ -10,7 +10,8 @@ installs a demo website on it.
 - Uses the account's default VPC and subnet for the region
 - Creates a security group allowing HTTP (80) from anywhere and SSH (22)
   from my own IP only
-- Looks up the latest x86_64 Amazon Linux 2 AMI
+- Looks up the latest x86_64 Amazon Linux 2023 AMI through the public SSM
+  parameter (Amazon Linux 2 reached end of support in June 2026)
 - Launches an EC2 instance with an encrypted root volume and IMDSv2
   required, and runs `install_website.sh` on boot, which installs Apache
   and drops in a small static demo page
@@ -18,7 +19,8 @@ installs a demo website on it.
 ## Requirements
 
 - Terraform 1.5 or newer (CI runs 1.8.5)
-- An AWS account with an AWS CLI profile set up
+- An AWS account with an AWS CLI profile set up. The profile needs
+  `ssm:GetParameter` for the AMI lookup, on top of the EC2 permissions
 - An existing EC2 key pair, name set with the `key_name` variable
   (defaults to `myec2key`)
 - An S3 bucket for the Terraform state file

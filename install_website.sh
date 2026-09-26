@@ -1,6 +1,6 @@
 #!/bin/bash
-yum update -y
-yum install -y httpd
+dnf update -y
+dnf install -y httpd
 
 cat > /var/www/html/index.html << 'HTML'
 <!DOCTYPE html>

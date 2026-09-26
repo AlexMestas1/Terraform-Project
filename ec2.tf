@@ -56,33 +56,17 @@ resource "aws_security_group" "ec2_security_group" {
 }
 
 
-# use data source to get a registered amazon linux 2 ami
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "owner-alias"
-    values = ["amazon"]
-  }
-
-  # the old amzn2-ami-hvm* pattern also matches arm64 images, which
-  # a t2.micro can't run
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
+# amazon linux 2 hit end of support in june 2026, so this looks up the
+# current amazon linux 2023 ami through the public ssm parameter that aws
+# keeps pointed at the latest image
+data "aws_ssm_parameter" "al2023_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 
 # launch the ec2 instance and install website
 resource "aws_instance" "ec2_instance" {
-  ami                    = data.aws_ami.amazon_linux_2.id
+  ami                    = data.aws_ssm_parameter.al2023_ami.value
   instance_type          = var.instance_type
   subnet_id              = aws_default_subnet.default_az1.id
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
@@ -99,6 +83,12 @@ resource "aws_instance" "ec2_instance" {
     volume_type = "gp3"
     volume_size = 8
     encrypted   = true
+  }
+
+  # the ssm parameter moves to a new ami every few weeks, without this an
+  # unrelated apply would replace the instance
+  lifecycle {
+    ignore_changes = [ami]
   }
 
   tags = {
