@@ -28,6 +28,17 @@ variable "key_name" {
   default     = "myec2key"
 }
 
+variable "http_allowed_cidr" {
+  description = "cidr block allowed to reach the website on port 80"
+  type        = string
+  default     = "0.0.0.0/0"
+
+  validation {
+    condition     = can(cidrnetmask(var.http_allowed_cidr))
+    error_message = "http_allowed_cidr must be a valid IPv4 cidr block, e.g. 0.0.0.0/0 or 198.51.100.0/24."
+  }
+}
+
 variable "my_ip" {
   description = "my public ip address, for ssh access"
   type        = string

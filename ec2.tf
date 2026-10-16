@@ -30,32 +30,38 @@ resource "aws_security_group" "ec2_security_group" {
   description = "allow access on ports 80 and 22"
   vpc_id      = aws_default_vpc.default_vpc.id
 
-  ingress {
-    description = "http access"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "ssh access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["${var.my_ip}/32"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = -1
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
     Name = "ec2 security group"
   }
+}
+
+
+# the rules are their own resources instead of inline blocks. aws recommends
+# this, and inline blocks and separate rules fight over the same group if
+# both are used, so the group above deliberately has none
+resource "aws_vpc_security_group_ingress_rule" "http" {
+  security_group_id = aws_security_group.ec2_security_group.id
+  description       = "http access"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+  cidr_ipv4         = var.http_allowed_cidr
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ssh" {
+  security_group_id = aws_security_group.ec2_security_group.id
+  description       = "ssh access"
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "${var.my_ip}/32"
+}
+
+resource "aws_vpc_security_group_egress_rule" "all_outbound" {
+  security_group_id = aws_security_group.ec2_security_group.id
+  description       = "all outbound traffic"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 
