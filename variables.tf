@@ -17,15 +17,32 @@ variable "project_name" {
 }
 
 variable "instance_type" {
-  description = "ec2 instance type"
+  description = "ec2 instance type, must be an x86_64 type because the ami lookup is x86_64"
   type        = string
   default     = "t2.micro"
+
+  validation {
+    condition     = can(regex("^[a-z0-9-]+\\.[a-z0-9-]+$", var.instance_type))
+    error_message = "instance_type should look like t2.micro, m5.large or m7i-flex.large."
+  }
+
+  # graviton types (t4g, m6g, c7gn, a1 and so on) are arm64, and launching an
+  # x86_64 ami on one fails at apply time with an architecture mismatch
+  validation {
+    condition     = !can(regex("^([a-z]+[0-9]+g[a-z]*|a1)\\.", var.instance_type))
+    error_message = "instance_type looks like an arm (graviton) type, but ec2.tf looks up an x86_64 ami. Pick an x86_64 type or change the ami lookup."
+  }
 }
 
 variable "key_name" {
   description = "name of an existing ec2 key pair to attach for ssh"
   type        = string
   default     = "myec2key"
+
+  validation {
+    condition     = length(trimspace(var.key_name)) > 0
+    error_message = "key_name can't be empty, the output ssh command and the instance both use it."
+  }
 }
 
 variable "http_allowed_cidr" {

@@ -118,3 +118,71 @@ run "http_cidr_rejects_junk" {
 
   expect_failures = [var.http_allowed_cidr]
 }
+
+run "x86_instance_types_are_accepted" {
+  command = plan
+
+  variables {
+    instance_type = "t3.small"
+  }
+
+  assert {
+    condition     = aws_instance.ec2_instance.instance_type == "t3.small"
+    error_message = "instance_type was ignored"
+  }
+}
+
+run "graviton_instance_type_is_rejected" {
+  command = plan
+
+  variables {
+    instance_type = "t4g.micro"
+  }
+
+  expect_failures = [var.instance_type]
+}
+
+run "other_graviton_families_are_rejected" {
+  command = plan
+
+  variables {
+    instance_type = "c7gn.large"
+  }
+
+  expect_failures = [var.instance_type]
+}
+
+run "instance_type_rejects_junk" {
+  command = plan
+
+  variables {
+    instance_type = "bigger please"
+  }
+
+  expect_failures = [var.instance_type]
+}
+
+run "key_name_cannot_be_blank" {
+  command = plan
+
+  variables {
+    key_name = "  "
+  }
+
+  expect_failures = [var.key_name]
+}
+
+# my first version of the instance_type check had no hyphen in the pattern and
+# rejected real types like this one
+run "instance_types_with_a_hyphen_are_accepted" {
+  command = plan
+
+  variables {
+    instance_type = "m7i-flex.large"
+  }
+
+  assert {
+    condition     = aws_instance.ec2_instance.instance_type == "m7i-flex.large"
+    error_message = "a valid hyphenated instance type was rejected"
+  }
+}
