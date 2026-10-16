@@ -2,3 +2,7 @@
 my_ip         = "203.0.113.5"
 key_name      = "myec2key"
 instance_type = "t2.micro"
+
+# optional, these are the defaults
+# http_allowed_cidr = "0.0.0.0/0"
+# project_name      = "terraform-demo"

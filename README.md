@@ -8,13 +8,34 @@ installs a demo website on it.
 ## What it does
 
 - Uses the account's default VPC and subnet for the region
-- Creates a security group allowing HTTP (80) from anywhere and SSH (22)
-  from my own IP only
+- Creates a security group allowing HTTP (80) from `http_allowed_cidr`
+  (open by default) and SSH (22) from my own IP only. The rules are
+  separate `aws_vpc_security_group_*_rule` resources, not inline blocks
 - Looks up the latest x86_64 Amazon Linux 2023 AMI through the public SSM
   parameter (Amazon Linux 2 reached end of support in June 2026)
 - Launches an EC2 instance with an encrypted root volume and IMDSv2
   required, and runs `install_website.sh` on boot, which installs Apache
-  and drops in a small static demo page
+  and drops in a small static demo page that shows the instance id and
+  availability zone
+- Tags every resource with `Project` and `ManagedBy` through the
+  provider's `default_tags`
+
+## Variables
+
+| name | default | notes |
+| --- | --- | --- |
+| `my_ip` | none, required | bare IPv4 address for SSH, no `/32` |
+| `key_name` | `myec2key` | existing key pair, can't be blank |
+| `instance_type` | `t2.micro` | must be x86_64, arm (Graviton) types are rejected at plan time |
+| `http_allowed_cidr` | `0.0.0.0/0` | who can reach port 80 |
+| `project_name` | `terraform-demo` | value of the `Project` tag |
+| `aws_region` | `us-east-1` | |
+| `aws_profile` | `terraform-user` | named AWS CLI profile |
+
+## Outputs
+
+`ec2_public_ipv4_url`, `ec2_ssh_command`, `ec2_instance_id` and
+`security_group_id`.
 
 ## Requirements
 
@@ -41,11 +62,39 @@ Terraform prints the site's URL and an ssh command when it's done.
 To avoid typing the variables every time, copy `terraform.tfvars.example`
 to `terraform.tfvars` and fill it in. That file is gitignored.
 
-CI runs `terraform fmt`, `validate` and `tflint` on every push. It doesn't
-run a plan, since that needs AWS credentials.
+CI runs `terraform fmt`, `validate`, `terraform test` and `tflint` on every
+push. It doesn't run a plan, since that needs AWS credentials.
 
 To tear everything down:
 
 ```
 terraform destroy
 ```
+
+## Tests
+
+```
+terraform test
+```
+
+The tests in `tests/main.tftest.hcl` use a mocked AWS provider, so they
+need no credentials and never touch the real account. They check that:
+
+- IMDSv2 is required and the root volume is encrypted
+- SSH is only open to `my_ip` on port 22, with a `/32`
+- `http_allowed_cidr` defaults to open and can be narrowed
+- `my_ip`, `http_allowed_cidr`, `instance_type` and `key_name` reject bad
+  values, including a CIDR in `my_ip` and Graviton instance types
+- `install_website.sh` has LF line endings and a bash shebang, and a changed
+  script replaces the instance (`user_data_replace_on_change`)
+
+## Troubleshooting
+
+- The instance's boot script logs to `/var/log/user-data.log`. If the site
+  doesn't come up, ssh in and read that file first. The script stops at the
+  first error and ends by checking Apache answers locally.
+- IMDSv2 is required, so a plain `curl http://169.254.169.254/latest/meta-data/`
+  returns 401. Get a token first, which `install_website.sh` shows how to do.
+- Shell scripts need LF line endings or the shebang breaks on the instance.
+  `.gitattributes` pins `*.sh`, `*.tf` and `*.hcl` to LF so a Windows
+  checkout doesn't convert them, and a test fails if the script has a CR.
