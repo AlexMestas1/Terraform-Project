@@ -7,8 +7,11 @@ resource "aws_default_vpc" "default_vpc" {
 }
 
 
-# use data source to get all availability zones in region
-data "aws_availability_zones" "available_zones" {}
+# use data source to get the availability zones in the region, skipping any
+# that are impaired or not opted in
+data "aws_availability_zones" "available_zones" {
+  state = "available"
+}
 
 
 # create default subnet if one does not exist

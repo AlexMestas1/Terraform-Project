@@ -10,6 +10,12 @@ variable "aws_profile" {
   default     = "terraform-user"
 }
 
+variable "project_name" {
+  description = "value of the Project tag put on every resource"
+  type        = string
+  default     = "terraform-demo"
+}
+
 variable "instance_type" {
   description = "ec2 instance type"
   type        = string

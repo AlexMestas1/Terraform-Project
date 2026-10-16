@@ -1,6 +1,15 @@
 provider "aws" {
   region  = var.aws_region
   profile = var.aws_profile
+
+  # applied to every taggable resource, so anything left behind in the
+  # account can be traced back to this project
+  default_tags {
+    tags = {
+      Project   = var.project_name
+      ManagedBy = "terraform"
+    }
+  }
 }
 
 terraform {
