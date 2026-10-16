@@ -1,0 +1,6 @@
+# keep line endings as LF in the repo and in the working copy. a shell script
+# with CRLF endings fails as user_data, because the interpreter on the first
+# line ends up with a stray carriage return on the end of its name
+*.sh text eol=lf
+*.tf text eol=lf
+*.hcl text eol=lf

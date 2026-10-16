@@ -82,6 +82,10 @@ resource "aws_instance" "ec2_instance" {
   key_name               = var.key_name
   user_data              = file("install_website.sh")
 
+  # user_data only runs on first boot, so a changed script would otherwise be
+  # applied in place and never actually run. replace the instance instead
+  user_data_replace_on_change = true
+
   # require IMDSv2 so the metadata service can't be reached with a plain GET
   metadata_options {
     http_endpoint = "enabled"

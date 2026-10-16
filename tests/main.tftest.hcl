@@ -34,6 +34,25 @@ run "instance_is_locked_down" {
   }
 }
 
+run "user_data_is_safe_to_run_on_linux" {
+  command = plan
+
+  assert {
+    condition     = !strcontains(aws_instance.ec2_instance.user_data, "\r")
+    error_message = "install_website.sh has windows line endings, the shebang would fail on the instance"
+  }
+
+  assert {
+    condition     = startswith(aws_instance.ec2_instance.user_data, "#!/bin/bash\n")
+    error_message = "install_website.sh should start with a bash shebang"
+  }
+
+  assert {
+    condition     = aws_instance.ec2_instance.user_data_replace_on_change == true
+    error_message = "a changed script should replace the instance, user_data only runs on first boot"
+  }
+}
+
 run "ssh_only_from_my_ip" {
   command = plan
 
