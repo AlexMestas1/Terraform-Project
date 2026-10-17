@@ -109,6 +109,55 @@ run "my_ip_rejects_junk" {
   expect_failures = [var.my_ip]
 }
 
+# the pattern in my_ip only counted digits, so an address that can't exist got
+# past the variable and failed later inside the security group rule, with an
+# error that pointed at ec2.tf instead of at my_ip
+run "my_ip_rejects_octets_over_255" {
+  command = plan
+
+  variables {
+    my_ip = "999.999.999.999"
+  }
+
+  expect_failures = [var.my_ip]
+}
+
+run "my_ip_rejects_a_single_octet_over_255" {
+  command = plan
+
+  variables {
+    my_ip = "203.0.113.256"
+  }
+
+  expect_failures = [var.my_ip]
+}
+
+# cidrnetmask accepts a block with host bits set, but the security group rule
+# wants the network address, so this used to fail late with the same kind of
+# misleading error
+run "http_cidr_rejects_host_bits" {
+  command = plan
+
+  variables {
+    http_allowed_cidr = "198.51.100.5/24"
+  }
+
+  expect_failures = [var.http_allowed_cidr]
+}
+
+run "http_cidr_accepts_a_network_address" {
+  command = plan
+
+  variables {
+    http_allowed_cidr = "198.51.100.0/24"
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.http.cidr_ipv4 == "198.51.100.0/24"
+    error_message = "a valid network address was rejected or changed"
+  }
+}
+
 run "http_cidr_rejects_junk" {
   command = plan
 

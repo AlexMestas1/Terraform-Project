@@ -51,8 +51,10 @@ variable "http_allowed_cidr" {
   default     = "0.0.0.0/0"
 
   validation {
-    condition     = can(cidrnetmask(var.http_allowed_cidr))
-    error_message = "http_allowed_cidr must be a valid IPv4 cidr block, e.g. 0.0.0.0/0 or 198.51.100.0/24."
+    # cidrnetmask alone also accepts 198.51.100.5/24, which has host bits set.
+    # the security group rule only takes the network address (198.51.100.0/24)
+    condition     = can(cidrnetmask(var.http_allowed_cidr)) && try(cidrhost(var.http_allowed_cidr, 0) == split("/", var.http_allowed_cidr)[0], false)
+    error_message = "http_allowed_cidr must be a valid IPv4 cidr block written as its network address, e.g. 0.0.0.0/0 or 198.51.100.0/24 (not 198.51.100.5/24)."
   }
 }
 
@@ -61,7 +63,9 @@ variable "my_ip" {
   type        = string
 
   validation {
-    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", var.my_ip))
-    error_message = "my_ip must be a plain IPv4 address, e.g. 203.0.113.5 (no /32, ec2.tf already appends that part)."
+    # the regex keeps out a /32 or stray text, cidrhost checks every octet is
+    # really 0 to 255. the regex alone let 999.999.999.999 through
+    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", var.my_ip)) && can(cidrhost("${var.my_ip}/32", 0))
+    error_message = "my_ip must be a plain IPv4 address, e.g. 203.0.113.5 (no /32, ec2.tf already appends that part, and each part must be 0 to 255)."
   }
 }
