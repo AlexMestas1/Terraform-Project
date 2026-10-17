@@ -1,4 +1,5 @@
-# create default vpc if one does not exist
+# adopt the default vpc, creating it if it does not exist. destroy only drops
+# it from state and leaves it (and its tags) in the account
 resource "aws_default_vpc" "default_vpc" {
 
   tags = {
@@ -14,7 +15,7 @@ data "aws_availability_zones" "available_zones" {
 }
 
 
-# create default subnet if one does not exist
+# adopt the default subnet, same caveat on destroy as the vpc above
 resource "aws_default_subnet" "default_az1" {
   availability_zone = data.aws_availability_zones.available_zones.names[0]
 

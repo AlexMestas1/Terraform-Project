@@ -39,7 +39,8 @@ installs a demo website on it.
 
 ## Requirements
 
-- Terraform 1.5 or newer (CI runs 1.8.5)
+- Terraform 1.5 or newer to plan and apply (CI runs 1.8.5). `terraform test`
+  uses mocked providers, which needs 1.7 or newer
 - An AWS account with an AWS CLI profile set up. The profile needs
   `ssm:GetParameter` for the AMI lookup, on top of the EC2 permissions
 - An existing EC2 key pair, name set with the `key_name` variable
@@ -65,11 +66,17 @@ to `terraform.tfvars` and fill it in. That file is gitignored.
 CI runs `terraform fmt`, `validate`, `terraform test` and `tflint` on every
 push. It doesn't run a plan, since that needs AWS credentials.
 
-To tear everything down:
+To tear it down:
 
 ```
 terraform destroy
 ```
+
+This removes the instance, the security group and its rules. It does **not**
+delete the default VPC and subnet. Terraform only adopts those, and destroy
+just drops them from state. They keep the `Name`, `Project` and `ManagedBy`
+tags this project put on them, so remove those by hand if you want the
+account back exactly as it was.
 
 ## Tests
 
@@ -84,9 +91,29 @@ need no credentials and never touch the real account. They check that:
 - SSH is only open to `my_ip` on port 22, with a `/32`
 - `http_allowed_cidr` defaults to open and can be narrowed
 - `my_ip`, `http_allowed_cidr`, `instance_type` and `key_name` reject bad
-  values, including a CIDR in `my_ip` and Graviton instance types
+  values, including a CIDR or an octet over 255 in `my_ip`, a block with host
+  bits set (`198.51.100.5/24`) in `http_allowed_cidr`, and Graviton instance
+  types
 - `install_website.sh` has LF line endings and a bash shebang, and a changed
   script replaces the instance (`user_data_replace_on_change`)
+
+## Known limitations
+
+- The S3 backend block sets no `encrypt` and no state locking, so two applies
+  at the same time could clobber each other. Native S3 locking
+  (`use_lockfile`) needs Terraform 1.10 or newer, and CI and my local copy
+  are on 1.8.5. I haven't been able to check the bucket's own versioning and
+  encryption settings from the profile I use here, which has no permission to
+  read them
+- The subnet is the first available AZ in the region. Not every AZ offers
+  every instance type. In `us-east-1` the first one offers `t2.micro` and the
+  other types I tried, but a different region or a newer type could land in an
+  AZ without it, and that only shows up at apply time
+- Port 80 is open to the world by default, and all outbound traffic is
+  allowed. Both are fine for a throwaway demo and not for anything real
+- The instance never picks up newer AMIs on its own (`ignore_changes = [ami]`
+  stops the SSM lookup from replacing it). Change the script or run
+  `terraform apply -replace=aws_instance.ec2_instance` to get a fresh image
 
 ## Troubleshooting
 
