@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# nothing here writes to the repo, so the token only needs to read it
+permissions:
+  contents: read
+
 jobs:
   fmt-and-validate:
     runs-on: ubuntu-latest
