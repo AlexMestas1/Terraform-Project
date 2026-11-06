@@ -27,6 +27,7 @@ installs a demo website on it.
 | `my_ip` | none, required | bare IPv4 address for SSH, no `/32` |
 | `key_name` | `myec2key` | existing key pair, can't be blank |
 | `instance_type` | `t2.micro` | must be x86_64, arm (Graviton) types are rejected at plan time |
+| `ssh_private_key_path` | unset | only used for the `ec2_ssh_command` output. Unset gives `key_name.pem` in the current directory |
 | `http_allowed_cidr` | `0.0.0.0/0` | who can reach port 80 |
 | `project_name` | `terraform-demo` | value of the `Project` tag |
 | `aws_region` | `us-east-1` | |
@@ -87,10 +88,14 @@ terraform test
 The tests in `tests/main.tftest.hcl` use a mocked AWS provider, so they
 need no credentials and never touch the real account. They check that:
 
-- IMDSv2 is required and the root volume is encrypted
+- IMDSv2 is required with a hop limit of 1, and the root volume is encrypted
+- The `ec2_ssh_command` output uses `ssh_private_key_path` when it's set and
+  `key_name.pem` otherwise. These two runs apply against the mocked provider
+  with a made-up public IP, because the real one isn't known until apply
 - SSH is only open to `my_ip` on port 22, with a `/32`
 - `http_allowed_cidr` defaults to open and can be narrowed
-- `my_ip`, `http_allowed_cidr`, `instance_type` and `key_name` reject bad
+- `my_ip`, `http_allowed_cidr`, `instance_type`, `key_name` and
+  `ssh_private_key_path` reject bad
   values, including a CIDR or an octet over 255 in `my_ip`, a block with host
   bits set (`198.51.100.5/24`) in `http_allowed_cidr`, and Graviton instance
   types

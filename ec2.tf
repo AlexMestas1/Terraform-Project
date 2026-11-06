@@ -87,10 +87,14 @@ resource "aws_instance" "ec2_instance" {
   # applied in place and never actually run. replace the instance instead
   user_data_replace_on_change = true
 
-  # require IMDSv2 so the metadata service can't be reached with a plain GET
+  # require IMDSv2 so the metadata service can't be reached with a plain GET.
+  # a hop limit of 1 also keeps the token response from being forwarded past
+  # the instance, so a container or proxy on it can't reach the metadata
+  # service. nothing here runs containers, so 1 costs nothing
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
   }
 
   root_block_device {

@@ -235,3 +235,65 @@ run "instance_types_with_a_hyphen_are_accepted" {
     error_message = "a valid hyphenated instance type was rejected"
   }
 }
+
+# the hop limit keeps the IMDSv2 token response from being forwarded past the
+# instance, a container or proxy on it shouldn't be able to reach metadata
+run "metadata_hop_limit_is_one" {
+  command = plan
+
+  assert {
+    condition     = aws_instance.ec2_instance.metadata_options[0].http_put_response_hop_limit == 1
+    error_message = "the IMDS hop limit should be 1"
+  }
+}
+
+# public_ip is only known after apply, and a plan-mode override can't fill it
+# in, so these two runs apply against the mocked provider (no real aws calls)
+# with a made-up ip to let the ssh command output be checked
+run "ssh_command_defaults_to_key_name_pem" {
+  command = apply
+
+  override_resource {
+    target = aws_instance.ec2_instance
+    values = {
+      public_ip = "198.51.100.77"
+    }
+  }
+
+  assert {
+    condition     = output.ec2_ssh_command == "ssh -i myec2key.pem ec2-user@198.51.100.77"
+    error_message = "the ssh command should fall back to key_name.pem"
+  }
+}
+
+# my real key is ~/.ssh/myec2key with no .pem, so the old output pointed at a
+# file that doesn't exist
+run "ssh_command_uses_the_key_path_when_set" {
+  command = apply
+
+  variables {
+    ssh_private_key_path = "~/.ssh/myec2key"
+  }
+
+  override_resource {
+    target = aws_instance.ec2_instance
+    values = {
+      public_ip = "198.51.100.77"
+    }
+  }
+
+  assert {
+    condition     = output.ec2_ssh_command == "ssh -i ~/.ssh/myec2key ec2-user@198.51.100.77"
+    error_message = "ssh_private_key_path was ignored in the ssh command"
+  }
+}
+
+run "ssh_key_path_cannot_be_blank" {
+  command = plan
+
+  variables {
+    ssh_private_key_path = "  "
+  }
+
+  expect_failures = [var.ssh_private_key_path]
+}

@@ -6,3 +6,6 @@ instance_type = "t2.micro"
 # optional, these are the defaults
 # http_allowed_cidr = "0.0.0.0/0"
 # project_name      = "terraform-demo"
+
+# only changes the ssh command in the outputs, default is key_name.pem
+# ssh_private_key_path = "~/.ssh/myec2key"

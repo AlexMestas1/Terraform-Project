@@ -14,6 +14,6 @@ output "security_group_id" {
 }
 
 output "ec2_ssh_command" {
-  description = "ssh command for the instance, assuming the key file is in the current directory"
-  value       = "ssh -i ${var.key_name}.pem ec2-user@${aws_instance.ec2_instance.public_ip}"
+  description = "ssh command for the instance, using ssh_private_key_path or key_name.pem in the current directory"
+  value       = "ssh -i ${coalesce(var.ssh_private_key_path, "${var.key_name}.pem")} ec2-user@${aws_instance.ec2_instance.public_ip}"
 }

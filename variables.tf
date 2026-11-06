@@ -45,6 +45,20 @@ variable "key_name" {
   }
 }
 
+variable "ssh_private_key_path" {
+  description = "path to the private key for key_name, only used to build the ssh command output. leave unset to get key_name.pem in the current directory"
+  type        = string
+  default     = null
+
+  validation {
+    # a blank string would produce "ssh -i  ec2-user@..." which fails
+    # confusingly, so reject it here and let null mean "use the default".
+    # trimspace(null) errors, which try() turns into "unset, so fine"
+    condition     = try(length(trimspace(var.ssh_private_key_path)) > 0, true)
+    error_message = "ssh_private_key_path can't be blank, leave it unset to use key_name.pem."
+  }
+}
+
 variable "http_allowed_cidr" {
   description = "cidr block allowed to reach the website on port 80"
   type        = string
